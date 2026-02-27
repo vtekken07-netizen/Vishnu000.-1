@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vishnu Neon Game</title>
+
+<style>
+body{
+margin:0;
+font-family:Arial;
+background:#0f0f0f;
+color:white;
+text-align:center;
+}
+
+/* Neon Heading */
+h1{
+text-shadow:0 0 15px #00f7ff,0 0 30px #00f7ff;
+}
+
+/* BIG YES NO BUTTON */
+.bigBtn{
+padding:18px 40px;
+font-size:22px;
+border:none;
+border-radius:12px;
+cursor:pointer;
+margin:15px;
+font-weight:bold;
+transition:0.3s;
+}
+
+#yes{
+background:#00f7ff;
+color:black;
+box-shadow:0 0 15px #00f7ff,0 0 30px #00f7ff;
+}
+
+#no{
+background:#ff0055;
+color:white;
+box-shadow:0 0 15px #ff0055,0 0 30px #ff0055;
+}
+
+.bigBtn:hover{
+transform:scale(1.1);
+}
+
+#gameSection{
+display:none;
+padding:20px;
+}
+
+.app{
+max-width:420px;
+margin:auto;
+background:#1a1a1a;
+padding:20px;
+border-radius:20px;
+box-shadow:0 0 25px #00f7ff33;
+}
+
+.modeSelect button{
+margin:5px;
+padding:8px 15px;
+}
+
+/* Board */
+.board{
+display:grid;
+grid-template-columns:repeat(3,100px);
+grid-gap:10px;
+justify-content:center;
+margin-top:20px;
+}
+
+.cell{
+width:100px;
+height:100px;
+background:#111;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:40px;
+cursor:pointer;
+border-radius:12px;
+box-shadow:0 0 10px #00f7ff55 inset;
+transition:0.3s;
+}
+
+.cell.win{
+background:#00f7ff;
+color:black;
+box-shadow:0 0 25px #00f7ff,0 0 50px #00f7ff;
+}
+
+.score{
+display:flex;
+justify-content:space-around;
+margin-top:15px;
+font-size:18px;
+}
+
+.status{
+margin-top:10px;
+font-weight:bold;
+}
+
+.profile{
+margin-top:15px;
+}
+
+.profile a{
+color:#00f7ff;
+text-decoration:none;
+}
+</style>
+</head>
+
+<body>
+
+<div id="intro">
+<h1>Kya aap Vishnu ke saath Game kheloge? 🎮</h1>
+<button id="yes" class="bigBtn">YES 😍</button>
+<button id="no" class="bigBtn">NO 😏</button>
+<p id="msg"></p>
+</div>
+
+<div id="gameSection">
+<div class="app">
+
+<h2>Neon Zero-Kata</h2>
+
+<div class="modeSelect">
+<button onclick="setMode('ai')">Play vs AI</button>
+<button onclick="setMode('2p')">2 Player</button>
+</div>
+
+<div class="score">
+<div>X: <span id="scoreX">0</span></div>
+<div>O: <span id="scoreO">0</span></div>
+</div>
+
+<div class="board" id="board"></div>
+
+<div class="status" id="status">Choose Mode</div>
+<button onclick="restartGame()">Restart</button>
+
+<div class="profile">
+<a href="https://instagram.com/Vishnu_0772" target="_blank">
+Instagram: Vishnu_0772
+</a>
+</div>
+
+</div>
+</div>
+
+<script>
+
+/* SOUND */
+const clickSound=new Audio("https://assets.mixkit.co/sfx/preview/mixkit-select-click-1109.mp3");
+const winSound=new Audio("https://assets.mixkit.co/sfx/preview/mixkit-game-level-completed-2059.mp3");
+
+/* Unlock sound */
+document.body.addEventListener("click",()=>{
+clickSound.play().then(()=>clickSound.pause()).catch(()=>{});
+},{once:true});
+
+/* Funny NO */
+let noCount=0;
+no.onclick=function(){
+noCount++;
+if(noCount==1) msg.innerText="Soch lo 😏";
+else if(noCount==2) msg.innerText="Last chance 😜";
+else{
+msg.innerText="Ab YES dabao 😎";
+this.style.display="none";
+}
+}
+
+yes.onclick=function(){
+intro.style.display="none";
+gameSection.style.display="block";
+}
+
+/* GAME */
+let mode="";
+let boardArray=["","","","","","","","",""];
+let currentPlayer="X";
+let gameActive=false;
+let scoreX=0;
+let scoreO=0;
+let cells=[];
+
+for(let i=0;i<9;i++){
+let cell=document.createElement("div");
+cell.classList.add("cell");
+cell.dataset.index=i;
+cell.addEventListener("click",playerMove);
+board.appendChild(cell);
+cells.push(cell);
+}
+
+function setMode(selected){
+mode=selected;
+restartGame();
+gameActive=true;
+status.innerText=
+mode==="ai"?"Your Turn (X)":"Player X Turn";
+}
+
+function playerMove(e){
+if(!gameActive) return;
+
+let index=e.target.dataset.index;
+if(boardArray[index]!=="" ) return;
+
+makeMove(index,currentPlayer);
+
+if(mode==="ai" && gameActive && currentPlayer==="O"){
+setTimeout(aiMove,400);
+}
+}
+
+function makeMove(index,player){
+clickSound.currentTime=0;
+clickSound.play();
+
+boardArray[index]=player;
+cells[index].innerText=player;
+
+if(checkWin(player)){
+winSound.play();
+status.innerText=player+" Wins 🎉";
+gameActive=false;
+
+if(player==="X"){scoreX++;scoreXDisplay.innerText=scoreX;}
+else{scoreO++;scoreODisplay.innerText=scoreO;}
+return;
+}
+
+if(boardArray.every(c=>c!=="")){
+status.innerText="Game Draw 😅";
+gameActive=false;
+return;
+}
+
+currentPlayer=player==="X"?"O":"X";
+status.innerText="Player "+currentPlayer+" Turn";
+}
+
+function aiMove(){
+let empty=boardArray
+.map((v,i)=>v===""?i:null)
+.filter(v=>v!==null);
+
+if(empty.length===0) return;
+
+let randomIndex=
+empty[Math.floor(Math.random()*empty.length)];
+
+makeMove(randomIndex,"O");
+}
+
+function checkWin(player){
+let combos=[
+[0,1,2],[3,4,5],[6,7,8],
+[0,3,6],[1,4,7],[2,5,8],
+[0,4,8],[2,4,6]
+];
+
+return combos.some(combo=>{
+if(combo.every(i=>boardArray[i]===player)){
+combo.forEach(i=>cells[i].classList.add("win"));
+return true;
+}
+return false;
+});
+}
+
+function restartGame(){
+boardArray=["","","","","","","","",""];
+cells.forEach(cell=>{
+cell.innerText="";
+cell.classList.remove("win");
+});
+currentPlayer="X";
+gameActive=false;
+status.innerText="Choose Mode";
+}
+
+</script>
+
+</body>
+</html>
